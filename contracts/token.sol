@@ -23,6 +23,9 @@ contract Token is IERC20 {
     string public name;
     string public symbol;
 
+    event NewIssuer(address indexed issuer);
+    event TransferOwnership(address indexed owner, bool indexed confirmed);
+
     modifier only(address role) {
         require(msg.sender == role); // dev: missing role
         _;
@@ -60,6 +63,8 @@ contract Token is IERC20 {
     external
     only(owner) {
         pendingOwner = newOwner;
+
+        emit TransferOwnership(pendingOwner, false);
     }
 
     /**
@@ -70,6 +75,8 @@ contract Token is IERC20 {
     only(pendingOwner) {
         owner = pendingOwner;
         pendingOwner = address(0);
+
+        emit TransferOwnership(owner, true);
     }
 
     /**
@@ -81,6 +88,8 @@ contract Token is IERC20 {
     external
     only(owner) {
         issuer = newIssuer;
+
+        emit NewIssuer(issuer);
     }
 
     /**
@@ -95,8 +104,10 @@ contract Token is IERC20 {
         require(to != address(0)); // dev: requires non-zero address
         require(totalSupply + value <= maxSupply); // dev: exceeds max supply
 
-        totalSupply += value;
-        balanceOf[to] += value;
+        unchecked {
+            totalSupply += value;
+            balanceOf[to] += value;
+        }
 
         emit Transfer(address(0), to, value);
     }
@@ -150,7 +161,9 @@ contract Token is IERC20 {
         uint256 currentAllowance = allowance[from][msg.sender];
         require(currentAllowance >= value); // dev: exceeds allowance
         updateBalance(from, to, value);
-        allowance[from][msg.sender] = currentAllowance - value;
+        unchecked {
+            allowance[from][msg.sender] = currentAllowance - value;
+        }
 
         return true;
     }
@@ -160,8 +173,10 @@ contract Token is IERC20 {
         require(to != address(0)); // dev: requires non-zero address
         uint256 balance = balanceOf[from];
         require(balance >= value); // dev: exceeds balance
-        balanceOf[from] = balance - value;
-        balanceOf[to] += value;
+        unchecked {
+            balanceOf[from] = balance - value;
+            balanceOf[to] += value;
+        }
 
         emit Transfer(from, to, value);
     }
