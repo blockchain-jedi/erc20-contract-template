@@ -158,11 +158,10 @@ contract Token is IERC20 {
     external
     override
     returns (bool) {
-        uint256 currentAllowance = allowance[from][msg.sender];
-        require(currentAllowance >= value); // dev: exceeds allowance
+        require(allowance[from][msg.sender] >= value); // dev: exceeds allowance
         updateBalance(from, to, value);
         unchecked {
-            allowance[from][msg.sender] = currentAllowance - value;
+            allowance[from][msg.sender] -= value;
         }
 
         return true;
@@ -171,10 +170,9 @@ contract Token is IERC20 {
     function updateBalance(address from, address to, uint256 value)
     internal {
         require(to != address(0)); // dev: requires non-zero address
-        uint256 balance = balanceOf[from];
-        require(balance >= value); // dev: exceeds balance
+        require(balanceOf[from] >= value); // dev: exceeds balance
         unchecked {
-            balanceOf[from] = balance - value;
+            balanceOf[from] -= value;
             balanceOf[to] += value;
         }
 
